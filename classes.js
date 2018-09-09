@@ -189,7 +189,10 @@ class Enemy {
                     if(this.duration-- <= -1) finishAnim(null,"fight",this.offset)
                 }
         }},null)
-        eventQ.insert(null,"you received " + mainC.protecc(dmg) + " damage.")
+        eventQ.insert(function(){
+            var Ddealt = mainC.protecc(dmg)
+            setDialog("you received " + Ddealt + " damage.")
+        },null)
     }
 
     performAction() {
