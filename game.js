@@ -112,8 +112,23 @@ main.addEventListener('click', function (event) {
                         if (optB.name == "action") {
 
                         }
-                        if (optB.name == "run") {
-
+                        if (optB.name == "escape") {
+                            setDialog("you attempt escaping")
+                            rng = Math.random()
+                            escapeChance = 0.4 + (mainC.spd - enemy.spd)/mainC.spd
+                            escapeChance += escapeChance*(mainC.luck/100)
+                            console.log("escape chance: "+escapeChance)
+                            if(escapeChance > rng){
+                                eventQ.insert(null,"you managed to escape")
+                                eventQ.insert(function(){currentRoom = lastRoom;switchState("explore")},null)
+                            }else{
+                                eventQ.insert(null, "you failed to escape")
+                                eventQ.insert(function(){
+                                    enemy.performAction()
+                                    mainC.hp < 1 ? mainC.performDeath() : eventQ.insert(function(){switchState("fight")},null)
+                                    eventQ.perform()
+                                },null)
+                            }
                         }
                         if (optB.name == "back") {
                             switchState("explore")
@@ -169,6 +184,7 @@ main.addEventListener('click', function (event) {
                         if (map.mapMatrix[roomOpt[i].indI][roomOpt[i].indJ] == "open") {
                             map.insert(roomOpt[i].indI, roomOpt[i].indJ, roomArray.bedroom.copy());
                         }
+                        lastRoom = currentRoom
                         currentRoom = map.mapMatrix[roomOpt[i].indI][roomOpt[i].indJ]
                         //console.log("hit Room with index: ["+ro.indI+","+ro.indJ+"]")
 
@@ -509,7 +525,7 @@ function initNewGame() {
     //Initializes main character
     mainC = {hp: 25, totalHp: 25, atk: 8, def: 5, spd: 5, luck: 5, hunger: 100, sanity: 74, defMod: 0, atkMod: 0,
         protecc: function (dmg) {
-            console.log("damage done: "+dmg+" mainC def: "+this.def+" mainC defModifier:" +this.defMod)
+            //console.log("damage done: "+dmg+" mainC def: "+this.def+" mainC defModifier:" +this.defMod)
             dmg -= Math.ceil(dmg * ((this.def+this.defMod) * 3 / 100));
             this.hp -= dmg;
             this.sanity -= 7
