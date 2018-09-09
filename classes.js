@@ -176,6 +176,19 @@ class Enemy {
         var dmg = enemy.atk;
         dmg += (enemy.luck * 3) / 100 > Math.random() ? Math.ceil(enemy.luck * 3 * enemy.atk / 100) : 0;
         eventQ.insert(null,enemy.name + " attacks")
+        eventQ.insert(function(){
+            anim = {
+                offset: 0,x:25,duration: 10, play: function () {
+                    this.offset += this.x
+                    ctx.translate(this.x,0)
+                    if(this.offset >= 25){
+                        this.x = -50
+                    }else{
+                        this.x = 50
+                    }
+                    if(this.duration-- <= -1) finishAnim(null,"fight",this.offset)
+                }
+        }},null)
         eventQ.insert(null,"you received " + mainC.protecc(dmg) + " damage.")
     }
 

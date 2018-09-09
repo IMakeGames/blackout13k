@@ -641,9 +641,9 @@ function adjacentRoom(i, j) {
     return false
 }
 
-function finishAnim(diag,state){
+function finishAnim(diag,state,offset){
     anim = null
-    setDialog(diag)
+    if(diag != null)setDialog(diag)
     if(state == "explore"){
         if (currentRoom.enemy != null){
             enemy = currentRoom.enemy
@@ -651,6 +651,9 @@ function finishAnim(diag,state){
         }else{
             eventQ.insert(function(){switchState(state)},null)
         }
+    }else if(state == "fight"){
+        ctx.translate(-offset,0)
+        eventQ.perform()
     }
 }
 
