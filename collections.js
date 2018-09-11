@@ -1,10 +1,10 @@
 spriteSheet = new Image();
-spriteSheet.src = "500x500standar_alpha.png";
+spriteSheet.src = "500x500standar.png";
 spriteArray = {
     abc: new Sprite(5, 0, 5, 5),
     nums: new Sprite(0, 0, 5, 5),
     punkSp: new Sprite(140, 0, 2, 5),
-    scroll: new Sprite(151, 0, 5, 5),
+    scroll: new Sprite(152, 0, 5, 5),
     mc: new Sprite(0, 50, 20, 23),
     enemies: new Sprite(5, 5, 34, 45),
     items: new Sprite(0, 73, 23, 24),
@@ -27,7 +27,7 @@ enemyArray = {
 };
 roomArray = {
     bedroom: new Room("bedroom", "just your standard bedroom", 0),
-    kitchen: new Room("kitchen"),
+    entrance: new Room("entrance", "there's an entrance here",0),
     bathroom: new Room("bathroom")
 };
 
@@ -58,11 +58,15 @@ abc = {
     x: 23,
     y: 24,
     z: 25,
-    ask: 26
+    "?": 26
 };
 punks = JSON.parse('{".":0,"\,":1,"\:":2,"/":3,"\'":4,"!":5}');
 
 itemArray = {
-    instantLunch: new Item("instant lunch", "highly nutritious and healthy. well, at least it will satiate some of your hunger", spriteArray.items,0, 0, 5, 15, 0),
+    instantLunch: new Item("instant lunch", "highly nutritious and healthy... or not. it will satiate some of your hunger", spriteArray.items,0, 0, 5, 15, 0),
     mcDaniels:    new Item("mcdaniel's", "tastes a bit like cardboard, but that mayo is damned adictive", spriteArray.items,1,0,2,20,0)
 }
+// uselessButton = {list:["yolo","not really..","swag","bro!","dab","none saw you","gank","who?"], pickOne:function(){
+//     rng = Math.floor(Math.random() * this.list.length - 1)
+//     return []
+//     }}

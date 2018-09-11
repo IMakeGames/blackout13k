@@ -18,6 +18,7 @@ optionMenu = null;
 mapMenuActive = false;
 anim = null
 drawOpenChest = null
+
 window.setTimeout(function () {
     standby = true;
     game = "mainMenu";
@@ -130,6 +131,17 @@ main.addEventListener('click', function (event) {
                                 },null)
                             }
                         }
+                        if(optB.name == "exit"){
+                            if(currentRoom.street == null) {
+                                str = new Street(currentRoom)
+                                currentRoom.asignStreet(str)
+                            }else{
+                                str = currentRoom.street
+                            }
+                            outside = true
+                            currentHouse = null
+                            setTransAnim("you went outside", "explore", str)
+                        }
                         if (optB.name == "back") {
                             switchState("explore")
                         }
@@ -174,48 +186,56 @@ main.addEventListener('click', function (event) {
             if (coords.x < 200 || coords.x > 800 || coords.y < 200 || coords.y > 800) {
                 mapMenuActive = false;
                 roomOpt = []
+                dirOpt = []
                 switchState("explore")
             } else {
-                //console.log("pressed map menu")
+                //console.log("pressed currentHouse menu")
                 //console.log("optionRoom length: "+roomOpt.length)
-                for(i = 0; i<roomOpt.length;i++) {
-                    //console.log("Mouse coords: "+coords+" Room Option: "+ro)
-                    if (roomOpt[i].in(coords.x, coords.y)) {
-                        if (map.mapMatrix[roomOpt[i].indI][roomOpt[i].indJ] == "open") {
-                            map.insert(roomOpt[i].indI, roomOpt[i].indJ, roomArray.bedroom.copy());
-                        }
-                        lastRoom = currentRoom
-                        currentRoom = map.mapMatrix[roomOpt[i].indI][roomOpt[i].indJ]
-                        //console.log("hit Room with index: ["+ro.indI+","+ro.indJ+"]")
-
-                        anim = {
-                            top_y: 0, bot_y: 1000, status: "coming", play: function () {
-                                ctx.fillStyle = "black"
-                                ctx.fillRect(0, 0, 1000, this.top_y)
-                                ctx.fillRect(0, this.bot_y, 1000, 500)
-                                if (this.status == "coming") {
-                                    this.top_y += 50
-                                    this.bot_y -= 50
-                                } else {
-                                    this.top_y -= 50
-                                    this.bot_y += 50
-                                    if (this.top_y <= 0) {
-                                        mainC.hunger -= 3
-                                        finishAnim("you moved to a new room","explore")
-                                    }
+                if (outside) {
+                    for(i=0;i<dirOpt.length;i++){
+                        if(dirOpt[i].in(coords.x,coords.y)){
+                            dirName = dirOpt[i].name
+                            if(dirName == "south" && currentRoom.moveOpts.south == "open"){
+                                currentRoom.moveOpts.south = new Street()
+                                currentRoom.moveOpts.south.moveOpts.north = currentRoom
+                            }else if(dirName == "north" && currentRoom.moveOpts.north == "open") {
+                                currentRoom.moveOpts.north = new Street()
+                                currentRoom.moveOpts.north.moveOpts.south = currentRoom
+                            }else{
+                                if(currentRoom.moveOpts[dirName] == "open"){
+                                    newHouse = new House()
+                                    newHouse.init(currentRoom)
+                                    currentRoom.moveOpts[dirName] = newHouse.entrance
+                                }else{
+                                    newHouse = currentRoom.moveOpts[dirName].house
                                 }
-                                if (this.top_y >= 500) {
-                                    this.status = "going"
-                                    dialog = null
-
-                                }
+                                currentHouse = newHouse
+                                outside = false
                             }
+                            msg = currentRoom.moveOpts[dirName].constructor.name == "Street" ? "you moved to another street" : "you went inside a house"
+                            setTransAnim(msg, "explore", currentRoom.moveOpts[dirName])
+                            mapMenuActive = false;
+                            roomOpt = []
+                            return
                         }
-                        mapMenuActive = false;
-                        roomOpt = []
-                        return
                     }
+                } else {
+                    for (i = 0; i < roomOpt.length; i++) {
+                        //console.log("Mouse coords: "+coords+" Room Option: "+ro)
+                        if (roomOpt[i].in(coords.x, coords.y)) {
+                            if (currentHouse.matrix[roomOpt[i].indI][roomOpt[i].indJ] == 'open') {
+                                currentHouse.insert(roomOpt[i].indI, roomOpt[i].indJ, roomArray.bedroom.copy());
+                            } else if (currentHouse.matrix[roomOpt[i].indI][roomOpt[i].indJ] == 'entrance') {
+                                currentHouse.insert(roomOpt[i].indI, roomOpt[i].indJ, roomArray.entrance);
+                            }
 
+                            setTransAnim("you moved to another room", "explore", currentHouse.matrix[roomOpt[i].indI][roomOpt[i].indJ])
+                            mapMenuActive = false;
+                            roomOpt = []
+                            return
+                        }
+
+                    }
                 }
             }
         } else if (waitForScroll) {
@@ -256,6 +276,34 @@ function switchState(name) {
     game = name;
     if (name == "explore") {
         setDialog("you are in " + currentRoom.name)
+        withdrawal_prob += withdrawal_increment
+        withdrawal_increment += 0.04
+        rng = Math.random()
+        //TODO Maybe change the way withdrawal works to have a fixed initial frequency
+        //console.log("withdrawal probability: "+withdrawal_prob+" withdrawal increment: "+withdrawal_increment+" rng: "+rng)
+        if(rng < withdrawal_prob){
+            withdrawal_prob = 0
+            withdrawal_increment = 0.01
+            eventQ.insert(function(){
+               mainC.sanity -= 15
+            },"internet withdrawal kicks in...")
+            eventQ.insert(function(){
+                switchState("explore")
+            },null)
+
+        }
+        if(mainC.hunger <= 0){
+            eventQ.insert(function(){
+                mainC.hp -= Math.ceil(mainC.totalHp/2)
+                setDmgAnim("you are starving!","explore")
+            },null)
+        }
+        if(mainC.hp <= 0){
+            eventQ.insert(null,"you died...")
+            eventQ.insert(function(){
+                switchState("gameover")
+            },null)
+        }
     }
     if (name == "items") {
         dialog = null;
@@ -267,7 +315,9 @@ function switchState(name) {
         if(mainC.atkMod > 0) mainC.atkMod = 0
     }
     if (name == "gameover") {
-        dialog = null;
+        eventQ.queue.clear()
+        dialog = null
+        standby = true
         refreshGlobalDraw()
     }
 }
@@ -285,7 +335,9 @@ function refreshGlobalDraw() {
     if (game == "explore" || game == "fight") {
         if (game == "explore") {
             //Draw Room Background
-            oBoxes = [new OptionBox("move", 40, 640, 5), new OptionBox("look", 235, 640, 5), new OptionBox("items", 640, 640, 5), new OptionBox("menu", 825, 640, 5)];
+            oBoxes = [new OptionBox("move", 40, 640, 5), new OptionBox("look", 235, 640, 5), new OptionBox("items", 610, 640, 5)]
+            currentRoom.name == 'entrance' ? oBoxes.push(new OptionBox("exit", 825, 640, 5)) : ""
+
             currentRoom.drawRoom()
         } else {
             oBoxes = [new OptionBox("attack", 40, 640, 4), new OptionBox("action", 235, 640, 4), new OptionBox("defend", 615, 640, 4), new OptionBox("escape", 803, 640, 4)];
@@ -295,41 +347,46 @@ function refreshGlobalDraw() {
         ctx.strokeRect(25, 625, 950, 350);
         ctx.strokeRect(40, 705, 920, 255);
         ctx.fillStyle = "black";
-        ctx.fillRect(448, 580, 119, 125);
-        ctx.strokeRect(448, 580, 119, 125);
-        spriteArray.mc.draw(457, 585, 5, {x: 0, y: 0});
+        ctx.fillRect(420, 580, 119, 125);
+        ctx.strokeRect(420, 580, 119, 125);
 
         //Draws hunger box
         ctx.strokeRect(25, 25, 307, 110);
         drawWords("hunger:", 45, 45, 5, 0);
         ctx.strokeRect(49, 77, 258, 35);
         ctx.fillStyle = "green";
-        ctx.fillRect(55, 83, 247 * (mainC.hunger / 100), 23);
+        ctx.fillRect(55, 83, 247 * (mainC.hunger > 0 ? mainC.hunger / 100: 0), 23);
 
         //Draws health box
         ctx.strokeRect(342, 25, 307, 110);
         drawWords("health:", 362, 45, 5, 0);
         ctx.strokeRect(366, 77, 258, 35);
-        ctx.fillRect(372, 83, 247 * (mainC.hp / mainC.totalHp), 23);
+        ctx.fillRect(372, 83, 247 * (mainC.hp > 0 ? (mainC.hp / mainC.totalHp): 0 ), 23);
 
         //Draws Mood
         ctx.strokeRect(659, 25, 307, 110);
         drawWords("mood:", 679, 45, 5, 0);
         state = "";
-        if (mainC.sanity >= 80)
-            state = "cool";
+        if (mainC.sanity >= 80) {
+            state = "cool"
+            face_x = 0
+        }
         if (mainC.sanity < 80 && mainC.sanity >= 50) {
             state = "anxious";
             color = {r: 255, g: 255, b: 0}
+            face_x = 1
         }
         if (mainC.sanity < 50 && mainC.sanity >= 20) {
             state = "paranoid";
             color = {r: 255, g: 150, b: 0}
+            face_x = 2
         }
         if (mainC.sanity < 20) {
             state = "psychotic";
             color = {r: 255, g: 0, b: 0}
+            face_x = 3
         }
+        spriteArray.mc.draw(426, 585, 5, {x: face_x, y: 0});
         drawWords(state, 685, 82, 5, 0);
         coloredMood = ctx.getImageData(685, 82, 265, 35);
         if (state != "cool") {
@@ -377,49 +434,72 @@ function refreshGlobalDraw() {
 
     if (mapMenuActive) {
         ctx.fillStyle = "black";
-        ctx.fillRect(200, 200, 600, 600);
-        ctx.strokeStyle = "white";
-        ctx.fillStyle = "white";
-        ctx.strokeRect(200, 200, 600, 600);
-        for (i = 0; i < map.mapMatrix.length; i++) {
-            for (j = 0; j < map.mapMatrix[i].length; j++) {
-                if (map.mapMatrix[i][j] != "closed" && map.mapMatrix[i][j] != null) {
-                    l = 95;
-                    w = 95;
-                    if (map.mapMatrix[i][j] == "open") {
-                        ctx.strokeStyle = "yellow"
-                        ctx.strokeRect(115 * i + 220, 115 * j + 220, w, l)
-                    } else {
-                        ind = map.mapMatrix[i][j].indexes;
-                        ctx.strokeStyle = "white";
-                        if (currentRoom == map.mapMatrix[i][j]) {
+
+        if(outside){
+            ctx.fillRect(110, 150, 780, 650);
+            ctx.strokeRect(110, 150, 780, 650);
+            ctx.beginPath();
+            ctx.lineWidth = 10
+            ctx.arc(500,500,145,0,2*Math.PI);
+            spr = new Sprite(155, 172, 34, 34).draw(398, 398, 6)
+            dirOpt =[new OptionBox("north", 415, 250, 5), new OptionBox("south", 415, 710, 5)]
+            console.log()
+            if(currentRoom.moveOpts.east != null){
+                dirOpt.push(new OptionBox("east",690,475,5))
+            }if(currentRoom.moveOpts.west != null){
+                dirOpt.push(new OptionBox("west",170,475,5))
+            }
+            ctx.stroke();
+            ctx.lineWidth = 5
+            dirOpt.forEach(function (e) {
+                console.log("drawing dir options for"+e)
+                e.drawOptionBox()
+            });
+        }else {
+            ctx.fillRect(200, 150, 600, 650);
+            ctx.strokeRect(200, 150, 600, 650);
+            for (i = 0; i < currentHouse.matrix.length; i++) {
+                for (j = 0; j < currentHouse.matrix[i].length; j++) {
+                    ctx.strokeStyle = "white";
+                    ctx.fillStyle = "white";
+                    if (currentHouse.matrix[i][j] != "closed" && currentHouse.matrix[i][j] != null) {
+                        l = 95;
+                        w = 95;
+                        if (currentHouse.matrix[i][j] == "open"){
+                            ctx.strokeStyle = "yellow"
+                        }
+                        else if (currentHouse.matrix[i][j] == "entrance" || currentHouse.matrix[i][j].name == "entrance") {
+                            ctx.strokeStyle = "green"
+                        }
+                        currentRoom.name == "entrance" ? ctx.fillStyle = "green" : ctx.fillStyle = "white";
+                        if (currentRoom == currentHouse.matrix[i][j]) {
                             ctx.fillRect(115 * i + 220, 115 * j + 220, w, l)
                         } else {
                             ctx.strokeRect(115 * i + 220, 115 * j + 220, w, l)
                         }
-                    }
-                    //console.log("checking adjacent room for space at: ["+i+","+j+"]")
-                    if (map.mapMatrix[i][j] != currentRoom && adjacentRoom(i, j)) {
-                        //console.log("creating room option")
-                        roomOpt.push({
-                            indI: i,
-                            indJ: j,
-                            x: 115 * i + 220,
-                            y: 115 * j + 220,
-                            w: w,
-                            h: l,
-                            in: function (x, y) {
-                                if (x >= this.x && x <= this.x + this.w && y >= this.y && y <= this.y + this.h) {
-                                    return true
+                        //console.log("checking adjacent room for space at: ["+i+","+j+"]")
+                        if (currentHouse.matrix[i][j] != currentRoom && adjacentRoom(i, j)) {
+                            //console.log("creating room option")
+                            roomOpt.push({
+                                indI: i,
+                                indJ: j,
+                                x: 115 * i + 220,
+                                y: 115 * j + 220,
+                                w: w,
+                                h: l,
+                                in: function (x, y) {
+                                    if (x >= this.x && x <= this.x + this.w && y >= this.y && y <= this.y + this.h) {
+                                        return true
+                                    }
                                 }
-                            }
-                        })
+                            })
+                        }
                     }
                 }
             }
         }
+        drawWords("where?",415,165,5,0)
         ctx.strokeStyle = 'green';
-        ctx.lineWidth = 5
     }
     if(drawOpenChest != null){
         ctx.fillStyle = "black"
@@ -480,6 +560,9 @@ function globalCounter() {
         } else {
             global_frame_counter = 0
         }
+        if(global_frame_counter % 1800 == 0){
+            mainC.hunger -= 15
+        }
         if (global_frame_counter % 2 == 0 && dontDraw >= 0) {
             ctx.clearRect(60, 725, 850, 150);
             drawWords(dialog, 60, 725, 5, dontDraw--)
@@ -495,7 +578,7 @@ function globalCounter() {
                 })
             }
         }
-        if (waitForScroll && global_frame_counter % 40 == 0) {
+        if (waitForScroll && global_frame_counter % 30 == 0) {
             if (drawScrollArrow) {
                 spriteArray.scroll.draw(900, 890, 5);
                 drawScrollArrow = false
@@ -574,20 +657,10 @@ function initNewGame() {
     //Room enemy is null
     enemy = null;
     //Chest doesn't exists
-    matrix = [];
-    for (i = 0; i < 5; i++) {
-        matrix[i] = new Array(5)
-    }
 
-    map = {
-        mapMatrix: matrix,
-        insert: function (i, j, room) {
-            this.mapMatrix[i][j] = room;
-            this.mapMatrix[i][j].init(i, j)
-        }
-    };
-    //currentFloor[3][3] = new Room("your room","this is my room",1)
-    map.insert(1, 1, roomArray.bedroom.copy());
+    currentHouse = new House()
+
+    currentHouse.insert(1, 1, roomArray.bedroom.copy());
     //There is no item name selected
     itemName = null;
     //Item Slots is initiated.
@@ -604,11 +677,14 @@ function initNewGame() {
     }
     //Event Queue starts empty
     roomOpt = []
+    dirOpt = []
     //New Room is created
-    currentRoom = map.mapMatrix[1][1];
+    currentRoom = currentHouse.matrix[1][1];
+    currentHouse.matrix[0][0] = "entrance"
     //New Mood flag is set so that the mood is determined
     //Counter for next hunger check is reset.
-    hunger_counter = 0;
+   withdrawal_prob = 0.01;
+   withdrawal_increment = 0.02
     //You are not waiting for scroll or drawing scroll arrow
     waitForScroll = drawScrollArrow = false;
     //Global Frame Counter is set to 0 and so is dont Draw
@@ -619,6 +695,7 @@ function initNewGame() {
     //Item is set.
     addItem(itemArray.instantLunch.copy())
     //New Box is defined
+    outside = false
 }
 
 function addItem(item) {
@@ -628,22 +705,23 @@ function addItem(item) {
             return
         }
     }
+    eventQ.insert(null,"...but there's no space in your inventory")
 }
 
 function adjacentRoom(i, j) {
-    var inds = currentRoom.indexes
-    for (k = 0; k < inds.length; k++) {
-        //console.log("checking adjacent room for Current Room: ["+inds[k][0]+","+inds[k][1]+"] and indexes: i"+i+" j"+j)
-        if ((inds[k][1] == j && (i == (inds[k][0] + 1) || i == (inds[k][0] - 1))) || (inds[k][0] == i && (j == (inds[k][1] + 1) || j == (inds[k][1] - 1)))) {
-            return true
-        }
+    pos = currentRoom.pos
+    //console.log("checking adjacent room for Current Room: ["+inds[k][0]+","+inds[k][1]+"] and indexes: i"+i+" j"+j)
+    if ((pos[1] == j && (i == (pos[0] + 1) || i == (pos[0] - 1))) || (pos[0] == i && (j == (pos[1] + 1) || j == (pos[1] - 1)))) {
+        return true
     }
     return false
 }
 
 function finishAnim(diag,state,offset){
     anim = null
+    if(offset != null)ctx.translate(-offset,0)
     if(diag != null)setDialog(diag)
+
     if(state == "explore"){
         if (currentRoom.enemy != null){
             enemy = currentRoom.enemy
@@ -652,8 +730,49 @@ function finishAnim(diag,state,offset){
             eventQ.insert(function(){switchState(state)},null)
         }
     }else if(state == "fight"){
-        ctx.translate(-offset,0)
         eventQ.perform()
     }
 }
 
+function setDmgAnim(diag,state){
+    anim = {
+        offset: 0, x: 25, duration: 10, play: function () {
+            this.offset += this.x
+            ctx.translate(this.x, 0)
+            if (this.offset >= 25) {
+                this.x = -50
+            } else {
+                this.x = 50
+            }
+            if (this.duration-- <= -1) finishAnim(diag, state, this.offset)
+        }
+    }
+}
+
+function setTransAnim(diag, state,newRoom) {
+    anim = {
+        top_y: 0, bot_y: 1000, status: "coming", play: function () {
+            ctx.fillStyle = "black"
+            ctx.fillRect(0, 0, 1000, this.top_y)
+            ctx.fillRect(0, this.bot_y, 1000, 500)
+            if (this.status == "coming") {
+                this.top_y += 50
+                this.bot_y -= 50
+            } else {
+                this.top_y -= 50
+                this.bot_y += 50
+                if (this.top_y <= 0) {
+                    mainC.hunger -= 3
+                    finishAnim(diag,state)
+                }
+            }
+            if (this.top_y >= 500) {
+                lastRoom = currentRoom
+                currentRoom = newRoom
+                this.status = "going"
+                dialog = null
+
+            }
+        }
+    }
+}

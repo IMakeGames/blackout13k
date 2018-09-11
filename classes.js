@@ -12,8 +12,8 @@ class Item {
     }
 
     use() {
-        mainC.hp += this.hp;
-        mainC.hunger += this.hunger
+        mainC.hp = mainC.hp + this.hp >= mainC.totalHp ? mainC.totalHp : mainC.hp + this.hp
+        mainC.hunger = mainC.hunger + this.hunger >= 100 ? 100 : mainC.hunger + this.hunger
     }
 
     copy(){
@@ -64,20 +64,20 @@ class Room {
         this.enemy = null;
         this.mx = mx;
         this.cInit = customInit;
-        this.indexes = []
         this.chest = false
+        this.pos = null
     }
 
-    init(i, j) {
-        this.indexes.push([i, j]);
+    init(i, j,house) {
+        this.pos = [i,j]
         var rng = Math.random()
-        if(rng < 0.6){
-            this.enemy = enemyArray.youtuber
-        }if(rng < 0.4){
+        if(rng < 0.1){
+            this.enemy = enemyArray.youtuber.copy()
+        }if(rng < 0.2){
             this.chest = true
         }
         if (this.cInit != null) this.cInit()
-        var mm = map.mapMatrix
+        var mm = house.matrix
         var assignRooms = true
         var chance = 0.60
         while(assignRooms){
@@ -152,6 +152,34 @@ class Room {
 
         return {openRooms: count, nextToAsign: retVect}
     }
+
+    asignStreet(street){
+        this.street = street
+    }
+}
+
+class Street {
+    constructor(room) {
+        this.moveOpts = {north: "open", south: "open", east: null, west: null}
+        if(room != null){
+            this.moveOpts.east = room
+        }else {
+            if (Math.random() < 0.35) {
+                Math.random() > 0.5 ? this.moveOpts.east = "open" : this.moveOpts.west = "open"
+                if (Math.random() < 0.20) {
+                    this.moveOpts.east == "open" ? this.moveOpts.west = "open" : this.moveOpts.east = "open"
+                }
+            }
+        }
+        this.name = "street";
+        this.desc = "streets of rage";
+        this.enemy = null;
+        this.chest = false
+    }
+
+    drawRoom() {
+        spriteArray.rooms.draw(0, 160, 6, {x: 1, y: 0})
+    }
 }
 
 //Character class
@@ -162,7 +190,6 @@ class Enemy {
         this.name = name;
         this.sprite = sprite;
         this.hp = 10;
-        this.totalHp = 10;
         this.atk = 5;
         this.def = 5;
         this.spd = 5;
@@ -177,18 +204,8 @@ class Enemy {
         dmg += (enemy.luck * 3) / 100 > Math.random() ? Math.ceil(enemy.luck * 3 * enemy.atk / 100) : 0;
         eventQ.insert(null,enemy.name + " attacks")
         eventQ.insert(function(){
-            anim = {
-                offset: 0,x:25,duration: 10, play: function () {
-                    this.offset += this.x
-                    ctx.translate(this.x,0)
-                    if(this.offset >= 25){
-                        this.x = -50
-                    }else{
-                        this.x = 50
-                    }
-                    if(this.duration-- <= -1) finishAnim(null,"fight",this.offset)
-                }
-        }},null)
+           setDmgAnim(null,"fight")
+        },null)
         eventQ.insert(function(){
             var Ddealt = mainC.protecc(dmg)
             setDialog("you received " + Ddealt + " damage.")
@@ -215,16 +232,18 @@ class Enemy {
     performDeath() {
         var name = this.name;
         eventQ.insert(null,name + " was defeated")
-        eventQ.insert(function(){switchState("explore")},null)
+        eventQ.insert(function(){
+            currentRoom.enemy = null
+            switchState("explore")},null)
     }
 
     draw() {
-        this.sprite.draw(400, 250, 6, {x: this.xm, y: 0})
+        this.sprite.draw(350, 200, 7, {x: this.xm, y: 0})
     }
 
     copy(){
         let name = this.name
-        let actions = actions;
+        let actions = this.actions;
         let xm = this.xm
         return new Enemy(name, this.sprite, xm, actions)
     }
@@ -312,4 +331,37 @@ class ItemSlot {
         if (this.item != null) this.item.sprite.draw(this.x + 8, this.y + 8, 2.5, {x: this.item.xm, y: 0});
         ctx.strokeRect(this.x, this.y, 75, 75)
     }
+}
+
+class House{
+    constructor(){
+        this.matrix = []
+        for (var i = 0; i < 5; i++) {
+            this.matrix[i] = new Array(5)
+        }
+    }
+
+    insert(i, j, room) {
+        this.matrix[i][j] = room;
+        this.matrix[i][j].init(i, j,this)
+    }
+
+    init(street){
+        var rng = Math.floor(Math.random()*3)
+        var newRoom = roomArray.entrance.copy()
+        var arr
+        newRoom.asignStreet(street)
+        if(rng ==0){
+            arr = [2,0]
+        }else if(rng == 1){
+            arr = [4,2]
+        }else if(rng == 2){
+            arr = [2,4]
+        }else{
+            arr = [0,2]
+        }
+        this.insert(arr[0],arr[1],newRoom)
+        this.entrance = newRoom
+    }
+
 }
