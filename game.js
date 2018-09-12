@@ -74,7 +74,7 @@ main.addEventListener('click', function (event) {
                             } else {
                                 order[1].performAction()
                                 if (order[0].hp < 1) {
-                                    order[0].performDeath()
+                                    order[0].performDeath("you were killed")
                                 } else {
                                     eventQ.insert(function(){switchState("fight","attack")},null)
                                 }
@@ -198,8 +198,6 @@ main.addEventListener('click', function (event) {
                 dirOpt = []
                 switchState("explore","streets")
             } else {
-                //console.log("pressed currentHouse menu")
-                //console.log("optionRoom length: "+roomOpt.length)
                 if (outside) {
                     for(i=0;i<dirOpt.length;i++){
                         if(dirOpt[i].in(coords.x,coords.y)){
@@ -287,7 +285,10 @@ function getMouseCoords(event) {
 // ========================================== THIS SECTION DEALS WITH State Switching0 =================================
 function switchState(name,from) {
     game = name;
-    if (name == "explore") {
+    if(mainC.hp <= 0){
+        mainC.performDeath(" you died")
+    }
+    else if (name == "explore") {
         //"newgame"
         //"look"
         //"escape"
@@ -315,26 +316,26 @@ function switchState(name,from) {
 
             }
             if(boozedCounter > 0) boozedCounter--
-        }
-        if(mainC.hunger <= 0){
-            eventQ.insert(function(){
-                mainC.hp -= Math.ceil(mainC.totalHp/2)
-                setDmgAnim("you are starving!","explore")
-            },null)
-        }
-        if(mainC.hp <= 0){
-            eventQ.insert(null,"you died...")
-            eventQ.insert(function(){
-                switchState("gameover","explore")
-            },null)
+            if(hungerCounter == 0){
+                mainC.hunger -= 10
+                hungerCounter = 10
+            }else{
+                hungerCounter--
+            }
+            if(mainC.hunger <= 0){
+                eventQ.insert(function(){
+                    mainC.hp -= Math.ceil(mainC.totalHp/2)
+                    setDmgAnim("you are starving!","starving")
+                },null)
+            }
         }
     }
-    if (name == "items") {
+    else if (name == "items") {
         //"items"
         dialog = null;
         refreshGlobalDraw()
     }
-    if (name == "fight") {
+    else if (name == "fight") {
         //"encounter"
         //"attack"
         //"defend"
@@ -343,10 +344,10 @@ function switchState(name,from) {
         if(mainC.defMod > 0) mainC.defMod = 0
         if(mainC.atkMod > 0) mainC.atkMod = 0
     }
-    if (name == "gameover") {
+    else if (name == "gameover") {
         //"fight"
         //"explore"
-        eventQ.queue.clear()
+        eventQ.queue = []
         dialog = null
         standby = true
         refreshGlobalDraw()
@@ -592,9 +593,6 @@ function globalCounter() {
         } else {
             global_frame_counter = 0
         }
-        if(global_frame_counter % 1800 == 0){
-            mainC.hunger -= 15
-        }
         if (global_frame_counter % 2 == 0 && dontDraw >= 0) {
             ctx.clearRect(60, 725, 850, 150);
             drawWords(dialog, 60, 725, 5, dontDraw--)
@@ -673,14 +671,15 @@ function initNewGame() {
                 eventQ.insert(null,"you defend")
             }
         },
-        performDeath: function () {
-            eventQ.insert(null,"you were killed...");
+        performDeath: function (str) {
+            eventQ.insert(null,str);
             eventQ.insert(function () {
                 switchState("gameover", "fight")
             },null)
         }
     };
     boozedCounter = 0
+    hungerCounter = 10
     eventQ = {
         queue: [],
         insert: function(extra,text){
@@ -774,10 +773,12 @@ function finishAnim(diag,state,offset){
             enemy = currentRoom.enemy
             eventQ.insert(function(){switchState("fight","encounter")},"you encounter " + currentRoom.enemy.name)
         }else{
-            eventQ.insert(function(){switchState(state,"room")},null)
+            eventQ.insert(function(){switchState("explore","room")},null)
         }
-    }else if(state == "fight"){
+    } else if(state == "fight"){
         eventQ.perform()
+    }else if(state == "starving"){
+        ventQ.insert(function(){switchState("explore","starved")},null)
     }
 }
 
