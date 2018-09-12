@@ -1,5 +1,5 @@
 spriteSheet = new Image();
-spriteSheet.src = "500x500standar.png";
+spriteSheet.src = "ssheet_alpha.png";
 spriteArray = {
     abc: new Sprite(5, 0, 5, 5),
     nums: new Sprite(0, 0, 5, 5),
@@ -12,23 +12,58 @@ spriteArray = {
     misc: new Sprite(0, 172, 53, 34)
 };
 enemyArray = {
-    youtuber: new Enemy("youtuber", spriteArray.enemies, 0, [
+    ratboy: new Enemy("ratboy",spriteArray.enemies, 1, [
         {
             prob: 0.3, funct: function () {
-                eventQ.insert(null,"youtuber tried to upload a video...")
-                eventQ.insert(null,"... but there is no internet")
+                eventQ.insert(null,"rat boy hits you with his pixaxe.")
+                eventQ.insert(null,"... but it's made of cardboard")
             }
         },
         {
             prob: 1.0, funct: function () {
-                Enemy.prototype.atacc()
+                Enemy.prototype.atacc("rat boy bites you")
+            }
+        }]),
+   twitcher: new Enemy("twitcher", spriteArray.enemies, 0, [
+        {
+            prob: 0.3, funct: function () {
+                eventQ.insert(null,"twitcher starts streaming.")
+                eventQ.insert(null,"... but there's no internet")
+            }
+        },
+        {
+            prob: 1.0, funct: function () {
+                Enemy.prototype.atacc("twitcher drop kicks you")
+            }
+        }]),
+    influencer: new Enemy("influncer", spriteArray.enemies, 2, [
+        {
+            prob: 0.3, funct: function () {
+                eventQ.insert(null,"twitcher starts streaming.")
+                eventQ.insert(null,"... but there's no internet")
+            }
+        },
+        {
+            prob: 1.0, funct: function () {
+                Enemy.prototype.atacc("twitcher drop kicks you")
+            }
+        }]),
+    yourself: new Enemy("yourself", spriteArray.mc, 0, [
+        {
+            prob: 0.3, funct: function () {
+                eventQ.insert(null,"you laugh maniacaly")
+                eventQ.insert(null,"... laughter echoes through the night")
+            }
+        },
+        {
+            prob: 1.0, funct: function () {
+                Enemy.prototype.atacc("doom falls upon you")
             }
         }]),
 };
 roomArray = {
     bedroom: new Room("bedroom", "just your standard bedroom", 0),
-    entrance: new Room("entrance", "there's an entrance here",0),
-    bathroom: new Room("bathroom")
+    entrance: new Room("entrance", "there's an entrance here",0)
 };
 
 abc = {
@@ -63,10 +98,11 @@ abc = {
 punks = JSON.parse('{".":0,"\,":1,"\:":2,"/":3,"\'":4,"!":5}');
 
 itemArray = {
-    instantLunch: new Item("instant lunch", "highly nutritious and healthy... or not. it will satiate some of your hunger", spriteArray.items,0, 0, 5, 15, 0),
-    mcDaniels:    new Item("mcdaniel's", "tastes a bit like cardboard, but that mayo is damned adictive", spriteArray.items,1,0,2,20,0)
+    instantLunch: {prob: 0.2, i:new Item("instant lunch", "highly nutritious and healthy... or not. it will satiate some of your hunger", spriteArray.items,0, 0, 6, 15, 0)},
+    mcDaniels:    {prob: 0.11,i:new Item("mcdaniel's", "tastes a bit like cardboard, but that mayo is damn good", spriteArray.items,1,0,4,20,0)},
+    ciggy:        {prob: 0.25,i:new Item("ciggy", "helps you reduce tension at the expense of your health", spriteArray.items,2,0,-3,0,15)},
+    benzos:       {prob: 0.02,i:new Item("benzos", "chill you right up, but they're dangerously addictive", spriteArray.items,3,0,0,0,25)},
+    booze:        {prob: 0.2,i:new Item("booze", "will help you carry on. lowers your accuracy", spriteArray.items,4,0,0,0,20)},
+    bandAid:      {prob: 0.02,i:new Item("band aid", "it's all white magic", spriteArray.items,5,0,10,0,0)},
+    cheatOs:      {prob: 0.2,i:new Item("cheat o's", "that greasy cheat o's dust gets everywhere", spriteArray.items,5,0,3,10,0)}
 }
-// uselessButton = {list:["yolo","not really..","swag","bro!","dab","none saw you","gank","who?"], pickOne:function(){
-//     rng = Math.floor(Math.random() * this.list.length - 1)
-//     return []
-//     }}

@@ -58,7 +58,7 @@ main.addEventListener('click', function (event) {
                     if (optB.in(coords.x, coords.y)) {
                         if (optB.name == "new game" || optB.name == "try again?") {
                             initNewGame();
-                            switchState("explore");
+                            switchState("explore","newgame");
                             globalCounter()
                         }
                         if (optB.name == "move") {
@@ -76,15 +76,16 @@ main.addEventListener('click', function (event) {
                                 if (order[0].hp < 1) {
                                     order[0].performDeath()
                                 } else {
-                                    eventQ.insert(function(){switchState("fight")},null)
+                                    eventQ.insert(function(){switchState("fight","attack")},null)
                                 }
                             }
+                            if(boozedCounter > 0) boozedCounter--
                             eventQ.perform()
                         }
                         if (optB.name == "defend") {
                             mainC.performAction("defend")
                             enemy.performAction()
-                            mainC.hp < 1 ? mainC.performDeath() : eventQ.insert(function(){switchState("fight")},null)
+                            mainC.hp < 1 ? mainC.performDeath() : eventQ.insert(function(){switchState("fight","defend")},null)
                             eventQ.perform()
                         }
                         if (optB.name == "look") {
@@ -100,11 +101,11 @@ main.addEventListener('click', function (event) {
                                     addItem(item)}, "you get "+item.name)
                                 eventQ.insert(function(){
                                     drawOpenChest = null
-                                    switchState("explore")},null)
+                                    switchState("explore","look")},null)
                             }
                         }
                         if (optB.name == "items") {
-                            switchState("items")
+                            switchState("items","items")
                         }
                         if (optB.name == "menu") {
                             optionMenu = new OptionMenu(coords.x, coords.y, ["use", "drop"], itemIndex);
@@ -121,12 +122,12 @@ main.addEventListener('click', function (event) {
                             console.log("escape chance: "+escapeChance)
                             if(escapeChance > rng){
                                 eventQ.insert(null,"you managed to escape")
-                                eventQ.insert(function(){currentRoom = lastRoom;switchState("explore")},null)
+                                eventQ.insert(function(){currentRoom = lastRoom;switchState("explore","escape")},null)
                             }else{
                                 eventQ.insert(null, "you failed to escape")
                                 eventQ.insert(function(){
                                     enemy.performAction()
-                                    mainC.hp < 1 ? mainC.performDeath() : eventQ.insert(function(){switchState("fight")},null)
+                                    mainC.hp < 1 ? mainC.performDeath() : eventQ.insert(function(){switchState("fight","escape")},null)
                                     eventQ.perform()
                                 },null)
                             }
@@ -143,25 +144,29 @@ main.addEventListener('click', function (event) {
                             setTransAnim("you went outside", "explore", str)
                         }
                         if (optB.name == "back") {
-                            switchState("explore")
+                            switchState("explore","back")
                         }
                     }
                 })
             } else if (optionMenu != null) {
                 optionMenu.optionBoxes.forEach(function (optB) {
                     if (optB.in(coords.x, coords.y)) {
+                        i = itemSlots[optionMenu.itemIndex].item
                         if (optB.name == "use") {
-                            setDialog("you used an item");
+                            setDialog("you used "+i.name);
+                            if(i.name == "booze"){
+                                boozedCounter = 15
+                            }
                             eventQ.insert(function () {
                                 refreshGlobalDraw();
                                 standby = true
                             },null);
-                            itemSlots[optionMenu.itemIndex].item.use();
+                            i.use();
                             itemSlots[optionMenu.itemIndex].item = null;
                             optionMenu = null
                         }
                         if (optB.name == "drop") {
-                            setDialog("you dropped item");
+                            setDialog("you dropped " + i.name);
                             eventQ.insert(function () {
                                 refreshGlobalDraw();
                                 standby = true
@@ -187,7 +192,7 @@ main.addEventListener('click', function (event) {
                 mapMenuActive = false;
                 roomOpt = []
                 dirOpt = []
-                switchState("explore")
+                switchState("explore","streets")
             } else {
                 //console.log("pressed currentHouse menu")
                 //console.log("optionRoom length: "+roomOpt.length)
@@ -272,25 +277,36 @@ function getMouseCoords(event) {
 // ======================================================== END ========================================================
 
 // ========================================== THIS SECTION DEALS WITH State Switching0 =================================
-function switchState(name) {
+function switchState(name,from) {
     game = name;
     if (name == "explore") {
+        //"newgame"
+        //"look"
+        //"escape"
+        //"back"
+        //"streets"
+        //"withdrawal"
+        //"room"
+        //"win"
         setDialog("you are in " + currentRoom.name)
-        withdrawal_prob += withdrawal_increment
-        withdrawal_increment += 0.04
-        rng = Math.random()
-        //TODO Maybe change the way withdrawal works to have a fixed initial frequency
-        //console.log("withdrawal probability: "+withdrawal_prob+" withdrawal increment: "+withdrawal_increment+" rng: "+rng)
-        if(rng < withdrawal_prob){
-            withdrawal_prob = 0
-            withdrawal_increment = 0.01
-            eventQ.insert(function(){
-               mainC.sanity -= 15
-            },"internet withdrawal kicks in...")
-            eventQ.insert(function(){
-                switchState("explore")
-            },null)
+        if(["streets","room","escape","win"].include(from)){
+            withdrawal_prob += withdrawal_increment
+            withdrawal_increment += 0.05
+            rng = Math.random()
 
+            //console.log("withdrawal probability: "+withdrawal_prob+" withdrawal increment: "+withdrawal_increment+" rng: "+rng)
+            if(rng < withdrawal_prob){
+                withdrawal_prob = 0
+                withdrawal_increment = 0.05
+                eventQ.insert(function(){
+                    mainC.sanity -= 15
+                },"internet withdrawal kicks in...")
+                eventQ.insert(function(){
+                    switchState("explore","withdrawal")
+                },null)
+
+            }
+            if(boozedCounter > 0) boozedCounter--
         }
         if(mainC.hunger <= 0){
             eventQ.insert(function(){
@@ -301,20 +317,27 @@ function switchState(name) {
         if(mainC.hp <= 0){
             eventQ.insert(null,"you died...")
             eventQ.insert(function(){
-                switchState("gameover")
+                switchState("gameover","explore")
             },null)
         }
     }
     if (name == "items") {
+        //"items"
         dialog = null;
         refreshGlobalDraw()
     }
     if (name == "fight") {
+        //"encounter"
+        //"attack"
+        //"defend"
+        //"escape"
         setDialog("you are fighting "+enemy.name)
         if(mainC.defMod > 0) mainC.defMod = 0
         if(mainC.atkMod > 0) mainC.atkMod = 0
     }
     if (name == "gameover") {
+        //"fight"
+        //"explore"
         eventQ.queue.clear()
         dialog = null
         standby = true
@@ -607,6 +630,7 @@ function initNewGame() {
 
     //Initializes main character
     mainC = {hp: 25, totalHp: 25, atk: 8, def: 5, spd: 5, luck: 5, hunger: 100, sanity: 74, defMod: 0, atkMod: 0,
+        acc: 0.9,
         protecc: function (dmg) {
             //console.log("damage done: "+dmg+" mainC def: "+this.def+" mainC defModifier:" +this.defMod)
             dmg -= Math.ceil(dmg * ((this.def+this.defMod) * 3 / 100));
@@ -616,12 +640,24 @@ function initNewGame() {
         },
         performAction: function (decision) {
             if (decision == "attack") {
-                var dmg = this.atk;
-                dmg += (this.luck * 3) / 100 > Math.random() ? Math.ceil(this.luck * 3 * this.atk / 100) : 0;
-                eventQ.insert(null,"you attack");
-                eventQ.insert(function () {
-                    mainC.hunger -= 5;
-                },enemy.name + " received " + enemy.protecc(dmg) + " damage.")
+                var actualAcc = this.acc
+                if(sanity < 40){
+                    actualAcc = 0.7
+                    missMsg = "...but panic set in"
+                }else if(boozedCounter > 0){
+                    actualAcc = 0.8
+                    missMsg = "...but your inebriation got in the way"
+                }
+                eventQ.insert(null, "you attack");
+                if (Math.random() > this.acc) {
+                    eventQ.insert(null, "...but you missed")
+                } else {
+                    var dmg = this.atk;
+                    dmg += (this.luck * 3) / 100 > Math.random() ? Math.ceil(this.luck * 3 * this.atk / 100) : 0;
+                    eventQ.insert(function () {
+                        mainC.hunger -= 5;
+                    }, enemy.name + " received " + enemy.protecc(dmg) + " damage.")
+                }
             }
             if (decision == "defend"){
                 this.defMod += this.def
@@ -631,11 +667,11 @@ function initNewGame() {
         performDeath: function () {
             eventQ.insert(null,"you were killed...");
             eventQ.insert(function () {
-                switchState("gameover")
+                switchState("gameover", "fight")
             },null)
         }
     };
-
+    boozedCounter = 0
     eventQ = {
         queue: [],
         insert: function(extra,text){
@@ -683,8 +719,8 @@ function initNewGame() {
     currentHouse.matrix[0][0] = "entrance"
     //New Mood flag is set so that the mood is determined
     //Counter for next hunger check is reset.
-   withdrawal_prob = 0.01;
-   withdrawal_increment = 0.02
+    withdrawal_prob = 0.01;
+    withdrawal_increment = 0.02
     //You are not waiting for scroll or drawing scroll arrow
     waitForScroll = drawScrollArrow = false;
     //Global Frame Counter is set to 0 and so is dont Draw
@@ -725,9 +761,9 @@ function finishAnim(diag,state,offset){
     if(state == "explore"){
         if (currentRoom.enemy != null){
             enemy = currentRoom.enemy
-            eventQ.insert(function(){switchState("fight")},"you encounter " + currentRoom.enemy.name)
+            eventQ.insert(function(){switchState("fight","encounter")},"you encounter " + currentRoom.enemy.name)
         }else{
-            eventQ.insert(function(){switchState(state)},null)
+            eventQ.insert(function(){switchState(state,"room")},null)
         }
     }else if(state == "fight"){
         eventQ.perform()

@@ -14,6 +14,7 @@ class Item {
     use() {
         mainC.hp = mainC.hp + this.hp >= mainC.totalHp ? mainC.totalHp : mainC.hp + this.hp
         mainC.hunger = mainC.hunger + this.hunger >= 100 ? 100 : mainC.hunger + this.hunger
+        mainC.sanity = mainC.sanity + this.sanity >= 100 ? 100 : mainC.sanity + this.sanity
     }
 
     copy(){
@@ -186,30 +187,35 @@ class Street {
 class Enemy {
     //Has some attributes, like the name, lvl(?), hp, etc.
     //Must decide whether to leave lvl, spec and sanity... might not be necesary.
-    constructor(name, sprite, xm, actions) {
-        this.name = name;
+    constructor(name, sprite, xm, actions,hp,atk,def,spd,luck) {
+        this.name = name
         this.sprite = sprite;
-        this.hp = 10;
-        this.atk = 5;
-        this.def = 5;
-        this.spd = 5;
-        this.luck = 5;
+        this.acc = 0.9
+        this.hp = hp
+        this.atk = atk
+        this.def = def
+        this.spd = spd
+        this.luck = luck
         this.actions = actions;
         this.xm = xm
     }
 
     //Attack method takes into consideration luck. Luck is nice.
-    atacc() {
-        var dmg = enemy.atk;
-        dmg += (enemy.luck * 3) / 100 > Math.random() ? Math.ceil(enemy.luck * 3 * enemy.atk / 100) : 0;
-        eventQ.insert(null,enemy.name + " attacks")
-        eventQ.insert(function(){
-           setDmgAnim(null,"fight")
-        },null)
-        eventQ.insert(function(){
-            var Ddealt = mainC.protecc(dmg)
-            setDialog("you received " + Ddealt + " damage.")
-        },null)
+    atacc(str) {
+        eventQ.insert(null,str)
+        if(Math.random() > this.acc) {
+            eventQ.insert(null,(this.name + "misses"))
+        }else{
+            var dmg = enemy.atk;
+            dmg += (enemy.luck * 3) / 100 > Math.random() ? Math.ceil(enemy.luck * 3 * enemy.atk / 100) : 0;
+            eventQ.insert(function () {
+                setDmgAnim(null, "fight")
+            }, null)
+            eventQ.insert(function () {
+                var Ddealt = mainC.protecc(dmg)
+                setDialog("you received " + Ddealt + " damage.")
+            }, null)
+        }
     }
 
     performAction() {
@@ -234,7 +240,7 @@ class Enemy {
         eventQ.insert(null,name + " was defeated")
         eventQ.insert(function(){
             currentRoom.enemy = null
-            switchState("explore")},null)
+            switchState("explore","win")},null)
     }
 
     draw() {
@@ -242,10 +248,12 @@ class Enemy {
     }
 
     copy(){
-        let name = this.name
-        let actions = this.actions;
-        let xm = this.xm
-        return new Enemy(name, this.sprite, xm, actions)
+        let hp = hp
+        let atk = atk
+        let def = def
+        let spd = spd
+        let luck = luck
+        return new Enemy(this.sprite, this.xm, this.actions,hp,atk,def,spd,luck)
     }
 }
 
