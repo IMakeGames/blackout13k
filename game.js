@@ -96,12 +96,13 @@ main.addEventListener('click', function (event) {
                                 eventQ.insert(function(){
                                     currentRoom.chest = false
                                     drawOpenChest = 1},"there was an item inside")
-                                const item = itemArray.instantLunch.copy()
+                                const item = itemArray.requestRandom()
                                 eventQ.insert(function(){
                                     addItem(item)}, "you get "+item.name)
                                 eventQ.insert(function(){
                                     drawOpenChest = null
                                     switchState("explore","look")},null)
+                                score += 5
                             }
                         }
                         if (optB.name == "items") {
@@ -123,6 +124,7 @@ main.addEventListener('click', function (event) {
                             if(escapeChance > rng){
                                 eventQ.insert(null,"you managed to escape")
                                 eventQ.insert(function(){currentRoom = lastRoom;switchState("explore","escape")},null)
+                                score +=5
                             }else{
                                 eventQ.insert(null, "you failed to escape")
                                 eventQ.insert(function(){
@@ -130,12 +132,14 @@ main.addEventListener('click', function (event) {
                                     mainC.hp < 1 ? mainC.performDeath() : eventQ.insert(function(){switchState("fight","escape")},null)
                                     eventQ.perform()
                                 },null)
+                                score -= 5
                             }
                         }
                         if(optB.name == "exit"){
                             if(currentRoom.street == null) {
                                 str = new Street(currentRoom)
                                 currentRoom.asignStreet(str)
+                                scrore += 15
                             }else{
                                 str = currentRoom.street
                             }
@@ -203,14 +207,17 @@ main.addEventListener('click', function (event) {
                             if(dirName == "south" && currentRoom.moveOpts.south == "open"){
                                 currentRoom.moveOpts.south = new Street()
                                 currentRoom.moveOpts.south.moveOpts.north = currentRoom
+                                score += 15
                             }else if(dirName == "north" && currentRoom.moveOpts.north == "open") {
                                 currentRoom.moveOpts.north = new Street()
                                 currentRoom.moveOpts.north.moveOpts.south = currentRoom
+                                score += 15
                             }else{
                                 if(currentRoom.moveOpts[dirName] == "open"){
                                     newHouse = new House()
                                     newHouse.init(currentRoom)
                                     currentRoom.moveOpts[dirName] = newHouse.entrance
+                                    score += 15
                                 }else{
                                     newHouse = currentRoom.moveOpts[dirName].house
                                 }
@@ -230,6 +237,7 @@ main.addEventListener('click', function (event) {
                         if (roomOpt[i].in(coords.x, coords.y)) {
                             if (currentHouse.matrix[roomOpt[i].indI][roomOpt[i].indJ] == 'open') {
                                 currentHouse.insert(roomOpt[i].indI, roomOpt[i].indJ, roomArray.bedroom.copy());
+                                score += 15
                             } else if (currentHouse.matrix[roomOpt[i].indI][roomOpt[i].indJ] == 'entrance') {
                                 currentHouse.insert(roomOpt[i].indI, roomOpt[i].indJ, roomArray.entrance);
                             }
@@ -289,9 +297,9 @@ function switchState(name,from) {
         //"room"
         //"win"
         setDialog("you are in " + currentRoom.name)
-        if(["streets","room","escape","win"].include(from)){
+        if((["streets","room","escape","win"]).includes(from)){
             withdrawal_prob += withdrawal_increment
-            withdrawal_increment += 0.05
+            withdrawal_increment += 0.02
             rng = Math.random()
 
             //console.log("withdrawal probability: "+withdrawal_prob+" withdrawal increment: "+withdrawal_increment+" rng: "+rng)
@@ -362,6 +370,7 @@ function refreshGlobalDraw() {
             currentRoom.name == 'entrance' ? oBoxes.push(new OptionBox("exit", 825, 640, 5)) : ""
 
             currentRoom.drawRoom()
+            drawWords("score: "+score,750,145,3,0)
         } else {
             oBoxes = [new OptionBox("attack", 40, 640, 4), new OptionBox("action", 235, 640, 4), new OptionBox("defend", 615, 640, 4), new OptionBox("escape", 803, 640, 4)];
             currentRoom.enemy.draw()
@@ -629,7 +638,7 @@ function setDialog(diag) {
 function initNewGame() {
 
     //Initializes main character
-    mainC = {hp: 25, totalHp: 25, atk: 8, def: 5, spd: 5, luck: 5, hunger: 100, sanity: 74, defMod: 0, atkMod: 0,
+    mainC = {hp: 25, totalHp: 25, atk: 8, def: 6, spd: 5, luck: 6, hunger: 100, sanity: 74, defMod: 0, atkMod: 0,
         acc: 0.9,
         protecc: function (dmg) {
             //console.log("damage done: "+dmg+" mainC def: "+this.def+" mainC defModifier:" +this.defMod)
@@ -641,7 +650,7 @@ function initNewGame() {
         performAction: function (decision) {
             if (decision == "attack") {
                 var actualAcc = this.acc
-                if(sanity < 40){
+                if(this.sanity < 40){
                     actualAcc = 0.7
                     missMsg = "...but panic set in"
                 }else if(boozedCounter > 0){
@@ -720,7 +729,7 @@ function initNewGame() {
     //New Mood flag is set so that the mood is determined
     //Counter for next hunger check is reset.
     withdrawal_prob = 0.01;
-    withdrawal_increment = 0.02
+    withdrawal_increment = 0.05
     //You are not waiting for scroll or drawing scroll arrow
     waitForScroll = drawScrollArrow = false;
     //Global Frame Counter is set to 0 and so is dont Draw
@@ -729,7 +738,7 @@ function initNewGame() {
     globalItemIndex = null;
     //You are on standby
     //Item is set.
-    addItem(itemArray.instantLunch.copy())
+    addItem(itemArray.requestSpecific("instant lunch"))
     //New Box is defined
     outside = false
 

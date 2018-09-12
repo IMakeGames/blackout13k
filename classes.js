@@ -73,7 +73,7 @@ class Room {
         this.pos = [i,j]
         var rng = Math.random()
         if(rng < 0.1){
-            this.enemy = enemyArray.youtuber.copy()
+            this.enemy = enemyArray.requestRandom()
         }if(rng < 0.2){
             this.chest = true
         }
@@ -107,7 +107,7 @@ class Room {
     }
 
     drawRoom() {
-        this.roomBg.draw(0, 160, 6, {x: this.mx, y: 0})
+        this.roomBg.draw(0, 165, 6, {x: this.mx, y: 0})
     }
 
     copy(){
@@ -179,7 +179,7 @@ class Street {
     }
 
     drawRoom() {
-        spriteArray.rooms.draw(0, 160, 6, {x: 1, y: 0})
+        spriteArray.rooms.draw(0, 65, 6, {x: 1, y: 0})
     }
 }
 
@@ -241,6 +241,7 @@ class Enemy {
         eventQ.insert(function(){
             currentRoom.enemy = null
             switchState("explore","win")},null)
+        score += 20
     }
 
     draw() {
@@ -248,12 +249,12 @@ class Enemy {
     }
 
     copy(){
-        let hp = hp
-        let atk = atk
-        let def = def
-        let spd = spd
-        let luck = luck
-        return new Enemy(this.sprite, this.xm, this.actions,hp,atk,def,spd,luck)
+        let hp = this.hp
+        let atk = this.atk
+        let def = this.def
+        let spd = this.spd
+        let luck = this.luck
+        return new Enemy(this.name,this.sprite, this.xm, this.actions,hp,atk,def,spd,luck)
     }
 }
 
@@ -370,6 +371,32 @@ class House{
         }
         this.insert(arr[0],arr[1],newRoom)
         this.entrance = newRoom
+    }
+
+}
+
+class Collection{
+    constructor(memberArray){
+        this.memberArray = memberArray
+        this.probDist = []
+    }
+
+    init(){
+        this.memberArray.forEach(function(mem) {
+            for(var i = 0; i<mem.p;i++){
+                this.probDist.push(mem)
+            }
+        })
+    }
+
+    requestRandom(){
+        return this.probDist[Math.floor(Math.random() * this.probDist.length)].m.copy()
+    }
+
+    requestSpecific(name){
+        for(var i = 0;i<this.memberArray.length;i++){
+            if(this.memberArray[i].m.name == name) return this.memberArray[i].m.copy()
+        }
     }
 
 }
