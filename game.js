@@ -732,6 +732,8 @@ function initNewGame() {
     addItem(itemArray.instantLunch.copy())
     //New Box is defined
     outside = false
+
+    score = 0
 }
 
 function addItem(item) {
