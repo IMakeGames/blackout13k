@@ -18,6 +18,8 @@ optionMenu = null;
 mapMenuActive = false;
 anim = null
 drawOpenChest = null
+drawCatto = false
+globalItemIndex = null
 cont = false
 window.setTimeout(function () {
     standby = true;
@@ -33,6 +35,10 @@ main.addEventListener('click', function (event) {
         if (standby) {
             coords = getMouseCoords(event);
             if (optionMenu == null) {
+                if (globalItemIndex != null) {
+                    optionMenu = new OptionMenu(coords.x, coords.y, ["use", "drop"], globalItemIndex);
+                    refreshGlobalDraw()
+                }
                 oBoxes.forEach(function (optB) {
                     if (optB.in(coords.x, coords.y)) {
                         if (optB.name == "new game" || optB.name == "try again?") {
@@ -65,39 +71,52 @@ main.addEventListener('click', function (event) {
                         if (optB.name == "defend") {
                             mainC.performAction("defend")
                             enemy.performAction()
-                            if(mainC.hp < 1) {
-                                mainC.performDeath("you were killed")
-                            }else{
-                                eventQ.insert(function(){switchState("fight","defend")},null)
-                            }
+                            mainC.hp < 1 ? mainC.performDeath("you were killed") : eventQ.insert(function(){switchState("fight","defend")},null)
                             eventQ.perform()
                         }
                         if (optB.name == "look") {
                             setDialog(currentRoom.desc)
-                            if(currentRoom.chest){
+                            if(outside && currentRoom.cat){
+                                drawCatto = true
+                                eventQ.insert(null, "there is fine boi")
+                                eventQ.insert(null, "you give some pattos")
+                                eventQ.insert(null, "well, that was rewarding")
+                                eventQ.insert(function () {
+                                    mainC.sanity += 15
+                                    drawCatto = false
+                                    currentRoom.cat = false
+                                    switchState("explore", "look")
+                                }, null)
+                                score += 5
+                            }else if (currentRoom.chest){
                                 drawOpenChest = 0
-                                eventQ.insert(null,"there is an ancient treasure chest")
-                                eventQ.insert(function(){
+                                eventQ.insert(null, "there is an ancient treasure chest")
+                                eventQ.insert(function () {
                                     currentRoom.chest = false
-                                    drawOpenChest = 1},"there was an item inside")
+                                    drawOpenChest = 1
+                                }, "there was an item inside")
                                 const item = itemArray.requestRandom()
-                                eventQ.insert(function(){
-                                    addItem(item)}, "you get "+item.name)
-                                eventQ.insert(function(){
+                                eventQ.insert(function () {
+                                    addItem(item)
+                                }, "you get " + item.name)
+                                eventQ.insert(function () {
                                     drawOpenChest = null
-                                    switchState("explore","look")},null)
+                                    switchState("explore", "look")
+                                }, null)
                                 score += 5
                             }
                         }
                         if (optB.name == "items") {
                             switchState("items","items")
                         }
-                        if (optB.name == "menu") {
-                            optionMenu = new OptionMenu(coords.x, coords.y, ["use", "drop"], itemIndex);
-                            standby = true
-                        }
                         if (optB.name == "action") {
-
+                            setDialog("you hear a voice whisper in your ear...")
+                            eventQ.insert(null,"'this feature didn't make the cut'")
+                            eventQ.insert(null,"whoa.. scary..")
+                            eventQ.insert(null,"you wonder what that means..")
+                            enemy.performAction()
+                            mainC.hp < 1 ? mainC.performDeath("you were killed") : eventQ.insert(function(){switchState("fight","action")},null)
+                            mainC.sanity -= 5
                         }
                         if (optB.name == "escape") {
                             setDialog("you attempt escaping")
@@ -113,7 +132,7 @@ main.addEventListener('click', function (event) {
                                 eventQ.insert(null, "you failed to escape")
                                 eventQ.insert(function(){
                                     enemy.performAction()
-                                    mainC.hp < 1 ? mainC.performDeath() : eventQ.insert(function(){switchState("fight","escape")},null)
+                                    mainC.hp < 1 ? mainC.performDeath("you were killed") : eventQ.insert(function(){switchState("fight","escape")},null)
                                     eventQ.perform()
                                 },null)
                                 score -= 5
@@ -123,7 +142,7 @@ main.addEventListener('click', function (event) {
                             if(currentRoom.street == null) {
                                 str = new Street(currentRoom)
                                 currentRoom.asignStreet(str)
-                                scrore += 15
+                                score += 15
                             }else{
                                 str = currentRoom.street
                             }
@@ -140,47 +159,43 @@ main.addEventListener('click', function (event) {
                 if (!optionMenu.in(coords.x, coords.y)) {
                     optionMenu = null;
                     refreshGlobalDraw()
-                }
-                optionMenu.optionBoxes.forEach(function (optB) {
-                    if (optB.in(coords.x, coords.y)) {
-                        it = itemSlots[optionMenu.itemIndex].item
-                        if (optB.name == "use") {
-                            setDialog("you used "+it.name);
-                            if(it.name == "booze"){
-                                boozedCounter = 15
+                } else {
+                    optionMenu.optionBoxes.forEach(function (optB) {
+                        if (optB.in(coords.x, coords.y)) {
+                            it = itemSlots[optionMenu.itemIndex].item
+                            if (optB.name == "use") {
+                                setDialog("you used " + it.name);
+                                if (it.name == "booze") {
+                                    boozedCounter = 15
+                                }
+                                eventQ.insert(function () {
+                                    refreshGlobalDraw();
+                                    standby = true
+                                }, null);
+                                it.use()
+                                itemSlots[optionMenu.itemIndex].item = null;
+                                optionMenu = null
                             }
-                            eventQ.insert(function () {
-                                refreshGlobalDraw();
-                                standby = true
-                            },null);
-                            it.use()
-                            itemSlots[optionMenu.itemIndex].item = null;
-                            optionMenu = null
+                            if (optB.name == "drop") {
+                                setDialog("you dropped " + i.name);
+                                eventQ.insert(function () {
+                                    refreshGlobalDraw();
+                                    standby = true
+                                }, null);
+                                itemSlots[optionMenu.itemIndex].item = null;
+                                optionMenu = null
+                            }
                         }
-                        if (optB.name == "drop") {
-                            setDialog("you dropped " + i.name);
-                            eventQ.insert(function () {
-                                refreshGlobalDraw();
-                                standby = true
-                            },null);
-                            itemSlots[optionMenu.itemIndex].item = null;
-                            optionMenu = null
-                        }
-                    }
-                })
+                    })
+                }
             }
-            if (globalItemIndex != null) {
-                optionMenu = new OptionMenu(coords.x, coords.y, ["use", "drop"], globalItemIndex);
-                refreshGlobalDraw()
-            }
-
         } else if (mapMenuActive) {
             coords = getMouseCoords(event);
             if (coords.x < 200 || coords.x > 800 || coords.y < 200 || coords.y > 800) {
                 mapMenuActive = false;
                 roomOpt = []
                 dirOpt = []
-                switchState("explore","streets")
+                switchState("explore","mapmenu")
             } else {
                 if (outside) {
                     for(i=0;i<dirOpt.length;i++){
@@ -242,7 +257,7 @@ main.addEventListener('click', function (event) {
 }, false);
 
 main.addEventListener('mousemove', function (event) {
-    if (game == 'items' && standby) {
+    if (game == 'items' && standby && optionMenu == null) {
         coords = getMouseCoords(event);
         for (i = 0; i < itemSlots.length; i++) {
             if (itemSlots[i].item != null && itemSlots[i].in(coords.x, coords.y)) {
@@ -300,6 +315,26 @@ function switchState(name,from) {
 
             }
             if(boozedCounter > 0) boozedCounter--
+            if(toughnessCounter > 0) {
+                toughnessCounter--
+                console.log("thoughness counter: "+toughnessCounter)
+            }else{
+                if(enemyArray.memberArray[0].p >25){
+                    console.log("making it tougher")
+                    enemyArray.memberArray[0].p -= 15
+                    enemyArray.memberArray[1].p += 8
+                    enemyArray.memberArray[2].p += 7
+                    enemyArray.init()
+                }
+                toughnessCounter = 12
+            }
+            if(mainC.sanity < 20 && enemyArray.memberArray[3].p < 100){
+                enemyArray.memberArray[3].p = 100
+                enemyArray.init()
+            }else{
+                enemyArray.memberArray[3].p = 0
+                enemyArray.init()
+            }
             if(hungerCounter == 0){
                 mainC.hunger -= 10
                 hungerCounter = 10
@@ -331,7 +366,6 @@ function switchState(name,from) {
     else if (name == "gameover") {
         //"fight"
         //"explore"
-        console.log("switched to gameover")
         eventQ.queue = []
         dialog = null
         standby = true
@@ -346,7 +380,7 @@ function switchState(name,from) {
 function refreshGlobalDraw() {
     ctx.clearRect(0, 0, main.width, main.height);
     if (game == "mainMenu") {
-        drawWords("blackout.", 125, 400, 16, 0);
+        drawWords("b1ack0ut.", 125, 400, 16, 0);
         oBoxes = [new OptionBox("new game", 340, 550, 6)]
     }
     if (game == "explore" || game == "fight") {
@@ -432,7 +466,7 @@ function refreshGlobalDraw() {
         itemSlots.forEach(function (it) {
             it.draw()
         });
-        if (globalItemIndex != null) {
+        if (globalItemIndex != null && itemSlots[globalItemIndex].item != null) {
             item = itemSlots[globalItemIndex].item;
             drawWords(item.name, 325, 725, 5, 0);
             drawLine(325, 755, 325 + 29 * item.name.length - 2, 755);
@@ -442,8 +476,10 @@ function refreshGlobalDraw() {
         }
     }
     if (game == "gameover") {
-        drawWords("game over.", 125, 400, 16, 0);
-        oBoxes = [new OptionBox("try again?", 340, 550, 6)]
+        drawWords("game over.", 100, 400, 16, 0);
+        drawWords("final score: "+score,250,500,5,0)
+        oBoxes = [new OptionBox("try again?", 340, 555, 6)]
+        cont = false
     }
     oBoxes.forEach(function (e) {
         e.drawOptionBox()
@@ -470,7 +506,6 @@ function refreshGlobalDraw() {
             ctx.stroke();
             ctx.lineWidth = 5
             dirOpt.forEach(function (e) {
-                console.log("drawing dir options for"+e)
                 e.drawOptionBox()
             });
         }else {
@@ -519,10 +554,10 @@ function refreshGlobalDraw() {
         drawWords("where?",415,165,5,0)
         ctx.strokeStyle = 'green';
     }
-    if(drawOpenChest != null){
+    if(drawOpenChest != null || drawCatto){
         ctx.fillStyle = "black"
         ctx.fillRect(335,335,290,215)
-        spriteArray.misc.draw(345, 350,5,{x:drawOpenChest,y:0})
+        drawCatto ? new Sprite(106, 172, 49, 34).draw(350, 350, 5) : spriteArray.misc.draw(345, 350,5,{x:drawOpenChest,y:0})
         ctx.strokeRect(335,335,290,215)
     }
     if(anim != null) anim.play()
@@ -554,7 +589,15 @@ function drawWords(str, x_on_canvas, y_on_canvas, scale, dontDraw) {
             } else {
                 spriteArray.abc.draw(x_for_this_render, y_on_canvas, scale, {x: abc[lt], y: 0})
             }
-            x_for_this_render += lt == ' ' ? 3 * scale : 6 * scale
+            var mult = 0
+            if(lt == ' '){
+                mult = 3
+            }else if((['.','\'','?','/']).includes(lt)){
+                mult = 2
+            }else{
+                mult = 6
+            }
+            x_for_this_render += mult * scale
         });
         y_on_canvas += 5 * scale + 20
 
@@ -665,11 +708,11 @@ function initNewGame() {
         performDeath: function (str) {
             eventQ.insert(function () {switchState("gameover", "fight")},null)
             setDialog(str)
-            cont = false
         }
-    };
+    }
     boozedCounter = 0
     hungerCounter = 10
+    toughnessCounter = 12
     eventQ = {
         queue: [],
         insert: function(extra,text){
@@ -728,6 +771,7 @@ function initNewGame() {
     //You are on standby
     //Item is set.
     addItem(itemArray.requestSpecific("instant lunch"))
+    addItem(itemArray.requestSpecific("ciggy"))
     //New Box is defined
     outside = false
     score = 0

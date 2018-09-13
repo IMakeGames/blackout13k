@@ -23,7 +23,7 @@ enemyArray = new Collection([
                 prob: 1.0, funct: function () {
                     Enemy.prototype.atacc("rat boy bites you")
                 }
-            }],19,6,8,4,5)},
+            }],18,7,8,4,5,0.4)},
     {p: 25, m: new Enemy("twitcher", spriteArray.enemies, 0, [
             {
                 prob: 0.2, funct: function () {
@@ -35,7 +35,7 @@ enemyArray = new Collection([
                 prob: 1.0, funct: function () {
                     Enemy.prototype.atacc("twitcher drop kicks you")
                 }
-            }],15,8,5,5,6)},
+            }],16,9,5,5,6,0.5)},
     {p: 5, m:new Enemy("influncer", spriteArray.enemies, 2, [
             {
                 prob: 0.2, funct: function () {
@@ -47,7 +47,7 @@ enemyArray = new Collection([
                 prob: 1.0, funct: function () {
                     Enemy.prototype.atacc("influencer slaps you with her phone")
                 }
-            }],25,9,4,7,7)},
+            }],25,10,4,7,7,0.7)},
     {p: 0, m:new Enemy("yourself", spriteArray.mc, 0, [
             {
                 prob: 0.2, funct: function () {
@@ -59,7 +59,7 @@ enemyArray = new Collection([
                 prob: 1.0, funct: function () {
                     Enemy.prototype.atacc("doom falls upon you")
                 }
-            }],30,15,2,6,8)}
+            }],30,15,2,6,8,1)}
 
 ])
 enemyArray.init()
@@ -100,13 +100,13 @@ abc = {
 punks = JSON.parse('{".":0,"\,":1,"\:":2,"/":3,"\'":4,"!":5}');
 
 itemArray = new Collection([
-    {p: 20, m: new Item("instant lunch", "highly nutritious and healthy... or not. it will satiate some of your hunger", spriteArray.items,0, 0, 6, 15, 0)},
-    {p: 11,m: new Item("mcdaniel's", "tastes a bit like cardboard, but that mayo is damn good", spriteArray.items,1,0,4,20,0)},
-    {p: 25,m: new Item("ciggy", "helps you reduce tension at the expense of your health", spriteArray.items,2,0,-3,0,15)},
+    {p: 20, m: new Item("instant lunch", "nutritious and healthy... or not. it will satiate your hunger though", spriteArray.items,0, 0, 8, 15, 0)},
+    {p: 11,m: new Item("mcdaniel's", "tastes a bit like cardboard, but that mayo is damn good", spriteArray.items,1,0,6,20,0)},
+    {p: 25,m: new Item("ciggy", "helps you reduce tension at the expense of your health", spriteArray.items,2,0,-2,0,17)},
     {p: 2,m: new Item("benzos", "chill you right up, but they're dangerously addictive", spriteArray.items,3,0,0,0,25)},
-    {p: 20,m: new Item("booze", "will help you carry on. lowers your accuracy", spriteArray.items,4,0,0,0,20)},
-    {p: 2,m: new Item("band aid", "it's all white magic", spriteArray.items,5,0,10,0,0)},
-    {p: 20,m: new Item("cheat o's", "that greasy cheat o's dust gets everywhere", spriteArray.items,5,0,3,10,0)}
+    {p: 15,m: new Item("booze", "will help you carry on. lowers your accuracy", spriteArray.items,4,0,0,0,20)},
+    {p: 7,m: new Item("band aid", "it's all white magic", spriteArray.items,5,0,10,0,0)},
+    {p: 20,m: new Item("cheat o's", "that greasy cheat o's dust gets everywhere", spriteArray.items,6,0,6,10,0)}
 ])
 
 itemArray.init()

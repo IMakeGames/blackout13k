@@ -74,7 +74,7 @@ class Room {
         var rng = Math.random()
         if(rng < 0.4){
             this.enemy = enemyArray.requestRandom()
-        }if(rng < 0.3){
+        }if(rng < 0.4){
             this.chest = true
         }
         if (this.cInit != null) this.cInit()
@@ -162,22 +162,26 @@ class Room {
 class Street {
     constructor(room) {
         this.moveOpts = {north: "open", south: "open", east: null, west: null}
+        this.cat =false
+        this.enemy = null
         if(room != null){
             this.moveOpts.east = room
         }else {
-            if (Math.random() < 0.35) {
+            if (Math.random() < 0.5) {
                 Math.random() > 0.5 ? this.moveOpts.east = "open" : this.moveOpts.west = "open"
-                if (Math.random() < 0.20) {
+                if (Math.random() < 0.25) {
                     this.moveOpts.east == "open" ? this.moveOpts.west = "open" : this.moveOpts.east = "open"
                 }
+            }
+            var rng = Math.random()
+            if(rng < 0.5){
+                this.enemy = enemyArray.requestRandom()
+            }if(rng < 0.3){
+                this.cat = true
             }
         }
         this.name = "street";
         this.desc = "streets of rage";
-        var rng = Math.random()
-        if(rng < 0.5){
-            this.enemy = enemyArray.requestRandom()
-        }
     }
 
     drawRoom() {
@@ -189,7 +193,7 @@ class Street {
 class Enemy {
     //Has some attributes, like the name, lvl(?), hp, etc.
     //Must decide whether to leave lvl, spec and sanity... might not be necesary.
-    constructor(name, sprite, xm, actions,hp,atk,def,spd,luck) {
+    constructor(name, sprite, xm, actions,hp,atk,def,spd,luck,itemProb) {
         this.name = name
         this.sprite = sprite;
         this.acc = 0.85
@@ -200,6 +204,7 @@ class Enemy {
         this.luck = luck
         this.actions = actions;
         this.xm = xm
+        this.itemProb = itemProb
     }
 
     //Attack method takes into consideration luck. Luck is nice.
@@ -240,6 +245,14 @@ class Enemy {
     performDeath() {
         var name = this.name;
         eventQ.insert(null,name + " was defeated")
+        var rng = Math.random()
+        console.log("this rng: "+rng+" this item prob: "+this.itemProb)
+        if(rng < this.itemProb){
+            eventQ.insert(null,name+" dropped an item")
+            const item = itemArray.requestRandom()
+            eventQ.insert(function(){
+                addItem(item)}, "you get "+item.name)
+        }
         eventQ.insert(function(){
             currentRoom.enemy = null
             switchState("explore","win")},null)
@@ -256,7 +269,7 @@ class Enemy {
         let def = this.def
         let spd = this.spd
         let luck = this.luck
-        return new Enemy(this.name,this.sprite, this.xm, this.actions,hp,atk,def,spd,luck)
+        return new Enemy(this.name,this.sprite, this.xm, this.actions,hp,atk,def,spd,luck,this.itemProb)
     }
 }
 
