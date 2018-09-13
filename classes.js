@@ -72,15 +72,15 @@ class Room {
     init(i, j,house) {
         this.pos = [i,j]
         var rng = Math.random()
-        if(rng < 0.1){
+        if(rng < 0.4){
             this.enemy = enemyArray.requestRandom()
-        }if(rng < 0.2){
+        }if(rng < 0.3){
             this.chest = true
         }
         if (this.cInit != null) this.cInit()
         var mm = house.matrix
         var assignRooms = true
-        var chance = 0.60
+        var chance = 0.6
         while(assignRooms){
             var nextOpen = this.NextOpenAndAdjNum(i,j,mm)
             //console.log(nextOpen)
@@ -174,8 +174,10 @@ class Street {
         }
         this.name = "street";
         this.desc = "streets of rage";
-        this.enemy = null;
-        this.chest = false
+        var rng = Math.random()
+        if(rng < 0.5){
+            this.enemy = enemyArray.requestRandom()
+        }
     }
 
     drawRoom() {
@@ -190,7 +192,7 @@ class Enemy {
     constructor(name, sprite, xm, actions,hp,atk,def,spd,luck) {
         this.name = name
         this.sprite = sprite;
-        this.acc = 0.9
+        this.acc = 0.85
         this.hp = hp
         this.atk = atk
         this.def = def
@@ -203,8 +205,8 @@ class Enemy {
     //Attack method takes into consideration luck. Luck is nice.
     atacc(str) {
         eventQ.insert(null,str)
-        if(Math.random() > this.acc) {
-            eventQ.insert(null,(this.name + "misses"))
+        if(Math.random() > enemy.acc) {
+            eventQ.insert(null,(enemy.name + " misses"))
         }else{
             var dmg = enemy.atk;
             dmg += (enemy.luck * 3) / 100 > Math.random() ? Math.ceil(enemy.luck * 3 * enemy.atk / 100) : 0;
@@ -376,17 +378,18 @@ class House{
 }
 
 class Collection{
+
     constructor(memberArray){
         this.memberArray = memberArray
         this.probDist = []
     }
 
     init(){
-        this.memberArray.forEach(function(mem) {
-            for(var i = 0; i<mem.p;i++){
-                this.probDist.push(mem)
+        for(var i = 0;i<this.memberArray.length;i++){
+            for(var j = 0; j<this.memberArray[i].p;j++){
+                this.probDist.push(this.memberArray[i])
             }
-        })
+        }
     }
 
     requestRandom(){

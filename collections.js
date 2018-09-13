@@ -14,19 +14,19 @@ spriteArray = {
 enemyArray = new Collection([
     {p: 70, m: new Enemy("ratboy",spriteArray.enemies, 1, [
             {
-                prob: 0.3, funct: function () {
+                prob: 0.2, funct: function () {
                     eventQ.insert(null,"rat boy hits you with his pixaxe.")
-                    eventQ.insert(null,"... but it's made of cardboard")
+                    eventQ.insert(null,"... but it's made out of cardboard")
                 }
             },
             {
                 prob: 1.0, funct: function () {
                     Enemy.prototype.atacc("rat boy bites you")
                 }
-            }],12,4,5,3,4)},
+            }],19,6,8,4,5)},
     {p: 25, m: new Enemy("twitcher", spriteArray.enemies, 0, [
             {
-                prob: 0.3, funct: function () {
+                prob: 0.2, funct: function () {
                     eventQ.insert(null,"twitcher starts streaming.")
                     eventQ.insert(null,"... but there's no internet")
                 }
@@ -35,22 +35,22 @@ enemyArray = new Collection([
                 prob: 1.0, funct: function () {
                     Enemy.prototype.atacc("twitcher drop kicks you")
                 }
-            }],10,6,3,5,5)},
+            }],15,8,5,5,6)},
     {p: 5, m:new Enemy("influncer", spriteArray.enemies, 2, [
             {
-                prob: 0.3, funct: function () {
-                    eventQ.insert(null,"twitcher starts streaming.")
-                    eventQ.insert(null,"... but there's no internet")
+                prob: 0.2, funct: function () {
+                    eventQ.insert(null,"influencer took a selfie")
+                    eventQ.insert(null,"she says she looks fat...")
                 }
             },
             {
                 prob: 1.0, funct: function () {
-                    Enemy.prototype.atacc("twitcher drop kicks you")
+                    Enemy.prototype.atacc("influencer slaps you with her phone")
                 }
-            }],15,7,2,7,6)},
+            }],25,9,4,7,7)},
     {p: 0, m:new Enemy("yourself", spriteArray.mc, 0, [
             {
-                prob: 0.3, funct: function () {
+                prob: 0.2, funct: function () {
                     eventQ.insert(null,"you laugh maniacaly")
                     eventQ.insert(null,"... laughter echoes through the night")
                 }
@@ -59,7 +59,7 @@ enemyArray = new Collection([
                 prob: 1.0, funct: function () {
                     Enemy.prototype.atacc("doom falls upon you")
                 }
-            }],17,8,2,6,8)}
+            }],30,15,2,6,8)}
 
 ])
 enemyArray.init()
@@ -108,3 +108,5 @@ itemArray = new Collection([
     {p: 2,m: new Item("band aid", "it's all white magic", spriteArray.items,5,0,10,0,0)},
     {p: 20,m: new Item("cheat o's", "that greasy cheat o's dust gets everywhere", spriteArray.items,5,0,3,10,0)}
 ])
+
+itemArray.init()
